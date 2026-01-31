@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HTML 스네이크: GitHub에서 HTML 웹앱 배포 가이드</title>
+  <meta name="description" content="스네이크 같은 순수 HTML/CSS/JS 웹앱을 GitHub Pages로 빠르게 배포하는 단계별 가이드" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121821;
+      --panel-2: #0e141c;
+      --text: #e6eef8;
+      --muted: #9fb0c6;
+      --accent: #5ea1ff;
+      --accent-2: #8bd6ff;
+      --ok: #54d469;
+      --warn: #ffb454;
+      --danger: #ff6b6b;
+      --code-bg: #0a0f15;
+      --code-brd: #1b2431;
+      --chip: #1a2432;
+      --kbd: #101722;
+      --shadow: 0 6px 24px rgba(0,0,0,.35);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font: 15px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color: var(--text); background: linear-gradient(180deg, #0b0f14 0%, #0a0d12 100%);
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(11,15,20,.85), rgba(11,15,20,.35));
+      border-bottom: 1px solid #1a2230;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+    .topbar { display: flex; gap: 14px; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: radial-gradient(120% 120% at 20% 20%, #5ea1ff 0%, #3551ff 40%, #090f1a 70%);
+      box-shadow: 0 0 20px rgba(94,161,255,.35) inset, 0 10px 30px rgba(0,0,0,.6);
+    }
+    h1 { font-size: 22px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+    .mode {
+      display: flex; align-items: center; gap: 10px; color: var(--muted);
+    }
+    select, button, .chip {
+      color: var(--text); background: var(--panel); border: 1px solid #1b2431;
+      border-radius: 10px; padding: 10px 12px; cursor: pointer;
+    }
+    select { appearance: none; }
+    main { padding: 24px 20px 80px; }
+    .grid { display: grid; gap: 18px; grid-template-columns: 1.2fr .8fr; }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: linear-gradient(180deg, #0f1620, #0d131c);
+      border: 1px solid #1b2431; border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card .hd { padding: 18px 20px; border-bottom: 1px solid #1a2230; }
+    .card .bd { padding: 18px 20px; }
+    .title { font-size: 18px; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0; }
+
+    .step { display: grid; gap: 10px; padding: 14px; background: var(--panel-2); border: 1px solid #1b2431; border-radius: 12px; }
+    .step h3 { margin: 0; font-size: 16px; }
+    .row { display: flex; gap: 12px; align-items: flex-start; }
+    .row input[type="checkbox"] { transform: translateY(3px); }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .codebox {
+      position: relative; background: var(--code-bg); border: 1px solid var(--code-brd);
+      border-radius: 12px; overflow: hidden;
+    }
+    .codebox pre { margin: 0; padding: 14px 16px; overflow: auto; }
+    .codebox .copy {
+      position: absolute; top: 10px; right: 10px; background: var(--chip); border: 1px solid #263144;
+      border-radius: 10px; padding: 6px 10px; font-size: 12px;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: var(--chip); border: 1px solid #263144; font-size: 12px; }
+
+    .kbd {
+      display: inline-block; padding: 2px 6px; border-radius: 6px; background: var(--kbd);
+      border: 1px solid #263144; font-size: 12px; color: var(--muted);
+    }
+
+    details {
+      background: var(--panel-2); border: 1px solid #1b2431; border-radius: 12px; padding: 10px 12px;
+    }
+    details summary { cursor: pointer; user-select: none; color: var(--accent-2); }
+    details + details { margin-top: 10px; }
+
+    .ok { color: var(--ok); } .warn { color: var(--warn); } .danger { color: var(--danger); }
+
+    footer { color: var(--muted); text-align: center; padding: 28px; }
+    .sep { height: 1px; background: #1a2230; margin: 18px 0; }
+
+    .banner {
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(90deg, rgba(94,161,255,.15), rgba(139,214,255,.08));
+      border: 1px solid #304058; padding: 12px 14px; border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>HTML 스네이크: GitHub에서 HTML 웹앱 배포 가이드</h1>
+          <div class="sub">순수 HTML/CSS/JS 프로젝트를 <b>GitHub Pages</b>로 무료·빠르게 배포하기</div>
+        </div>
+      </div>
+      <div class="mode">
+        보기 모드
+        <select id="viewMode" aria-label="보기 모드">
+          <option value="fast">아주 빠르게</option>
+          <option value="detail" selected>상세 절차</option>
+          <option value="troubleshoot">문제 해결</option>
+        </select>
+        <button id="resetProgress" title="체크리스트 초기화">진행표 초기화</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- Left: Steps -->
+    <section class="card">
+      <div class="hd">
+        <h2 class="title">배포 절차</h2>
+        <p class="sub">아래 순서대로 체크하면 5–10분 내 배포 완료!</p>
+      </div>
+      <div class="bd" id="steps">
+        <!-- FAST TRACK -->
+        <div class="fast" hidden>
+          <div class="banner">
+            <span>🚀</span>
+            <div><b>아주 빠르게:</b> 웹 UI만으로 진행하는 초간단 경로</div>
+          </div>
+          <div class="sep"></div>
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="fast-1">
+              <h3>저장소 만들기 → <span class="kbd">New</span> → <span class="kbd">Repository name</span> 입력 → <span class="kbd">Public</span> → <span class="kbd">Create</span></h3>
+            </div>
+            <div class="hint">README는 선택. 이름 예: <code>snake-game</code></div>
+          </div>
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="fast-2">
+              <h3>코드 올리기 → <span class="kbd">Add file ▾</span> → <span class="kbd">Upload files</span> → <span class="kbd">index.html</span> 포함하여 드래그 & 드롭 → <span class="kbd">Commit</span></h3>
+            </div>
+            <div class="hint">홈페이지 진입 파일은 반드시 <code>index.html</code> (대소문자 정확히)</div>
+          </div>
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="fast-3">
+              <h3>배포 켜기 → <span class="kbd">Settings</span> → <span class="kbd">Pages</span> → Source: <span class="kbd">Deploy from a branch</span> → Branch: <span class="kbd">main / (root)</span> → <span class="kbd">Save</span></h3>
+            </div>
+            <div class="hint">잠시 후 상단에 <code>https://사용자명.github.io/저장소명/</code> 링크가 표시됩니다.</div>
+          </div>
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="fast-4">
+              <h3>접속 확인 & 캐시</h3>
+            </div>
+            <div class="hint">새 탭에서 열어보고, 바로 안 뜨면 1–3분 후 <span class="kbd">Ctrl/Cmd + Shift + R</span> (강력 새로고침)</div>
+          </div>
+        </div>
+
+        <!-- DETAILED -->
+        <div class="detail">
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-1">
+              <h3>준비물</h3>
+            </div>
+            <ul class="hint">
+              <li>GitHub 계정</li>
+              <li>(선택) 로컬 Git 설치 또는 GitHub 웹 UI</li>
+              <li><b>프로젝트 폴더</b>에 <code>index.html</code> + 필요한 <code>css/</code>, <code>js/</code>, <code>assets/</code></li>
+            </ul>
+            <details>
+              <summary>샘플 폴더 구조 보기</summary>
+              <div class="codebox">
+<pre><code>snake-game/
+├─ index.html
+├─ css/
+│  └─ style.css
+├─ js/
+│  └─ game.js
+└─ assets/
+   └─ apple.png
+</code></pre>
+                <button class="copy" data-target="prev">복사</button>
+              </div>
+            </details>
+          </div>
+
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-2">
+              <h3>GitHub 저장소 생성</h3>
+            </div>
+            <ol class="hint">
+              <li>GitHub → 우측 상단 <span class="kbd">+</span> → <span class="kbd">New repository</span></li>
+              <li><b>Repository name</b> 입력 (예: <code>snake-game</code>)</li>
+              <li><b>Public</b> 권장 → <span class="kbd">Create repository</span></li>
+            </ol>
+          </div>
+
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-3">
+              <h3>코드 업로드 (둘 중 택1)</h3>
+            </div>
+
+            <details open>
+              <summary>웹 UI로 업로드</summary>
+              <div class="hint">저장소 페이지 → <span class="kbd">Add file ▾</span> → <span class="kbd">Upload files</span> → 파일 드래그 → <span class="kbd">Commit changes</span></div>
+            </details>
+
+            <details>
+              <summary>로컬 Git 명령으로 업로드</summary>
+              <div class="codebox">
+<pre><code># 1) 로컬 폴더에서 초기화
+git init
+git add .
+git commit -m "init: snake game"
+
+# 2) GitHub 원격 연결 (URL은 본인 저장소로)
+git branch -M main
+git remote add origin https://github.com/&lt;사용자명&gt;/snake-game.git
+git push -u origin main
+</code></pre>
+                <button class="copy" data-target="prev">복사</button>
+              </div>
+            </details>
+            <p class="hint">메인 진입 파일은 <code>index.html</code> 이어야 합니다. (대소문자 주의: <code>Index.html</code>은 안 됨)</p>
+          </div>
+
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-4">
+              <h3>GitHub Pages 활성화</h3>
+            </div>
+            <ol class="hint">
+              <li><span class="kbd">Settings</span> → 좌측 <span class="kbd">Pages</span></li>
+              <li><b>Source</b>: <span class="kbd">Deploy from a branch</span></li>
+              <li><b>Branch</b>: <span class="kbd">main</span>, <b>Folder</b>: <span class="kbd">/(root)</span> (또는 <span class="kbd">/docs</span>)</li>
+              <li><span class="kbd">Save</span> → 1–3분 후 상단에 배포 링크 표시</li>
+            </ol>
+            <p class="hint">배포 주소: <code>https://&lt;사용자명&gt;.github.io/&lt;저장소명&gt;/</code></p>
+            <details>
+              <summary>docs 폴더로 배포하려면?</summary>
+              <p class="hint"><code>docs/</code>에 <code>index.html</code>을 두고, Pages 설정에서 <b>Branch: main</b>, <b>Folder: /docs</b> 선택</p>
+            </details>
+          </div>
+
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-5">
+              <h3>(선택) 커스텀 도메인, 리디렉트, SPA</h3>
+            </div>
+            <details>
+              <summary>커스텀 도메인 연결</summary>
+              <ol class="hint">
+                <li><span class="kbd">Settings → Pages</span>에서 <b>Custom domain</b> 입력</li>
+                <li>DNS에 <b>CNAME</b> 레코드로 <code>&lt;사용자명&gt;.github.io</code> 지정</li>
+              </ol>
+            </details>
+            <details>
+              <summary>SPA 라우팅 404 처리</summary>
+              <p class="hint"><code>404.html</code>을 만들어 라우팅을 루트로 되돌리는 스크립트를 넣으면 새로고침 404를 방지할 수 있습니다.</p>
+            </details>
+            <details>
+              <summary>Jekyll 처리 방지</summary>
+              <p class="hint">프로젝트 루트에 빈 파일 <code>.nojekyll</code>을 추가하면 <code>_</code>로 시작하는 폴더가 무시되는 문제를 피할 수 있습니다.</p>
+            </details>
+          </div>
+
+          <div class="step">
+            <div class="row">
+              <input type="checkbox" data-key="d-6">
+              <h3>최종 확인</h3>
+            </div>
+            <ul class="hint">
+              <li>배포 URL 접속 → 콘솔 오류 없는지 확인</li>
+              <li>이미지/CSS 경로는 <code>./assets/…</code>처럼 <b>상대 경로</b>를 권장</li>
+              <li>필요시 강력 새로고침 <span class="kbd">Ctrl/Cmd + Shift + R</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- TROUBLESHOOT -->
+        <div class="troubleshoot" hidden>
+          <div class="banner">
+            <span>🛠️</span>
+            <div><b>문제 해결:</b> 가장 자주 겪는 이슈와 단골 해결법</div>
+          </div>
+          <div class="sep"></div>
+
+          <details open>
+            <summary>배포 링크가 404 / 페이지가 안 떠요</summary>
+            <ul class="hint">
+              <li>Pages 설정에서 <b>Branch</b>와 <b>Folder</b>가 정확한지 확인</li>
+              <li><code>index.html</code>이 선택한 폴더의 루트에 있는지 확인</li>
+              <li>처음 배포는 1–3분 소요 → 잠시 후 새로고침</li>
+              <li>저장소가 <b>Private</b>이면 Pages 사용이 제한될 수 있음</li>
+            </ul>
+          </details>
+
+          <details>
+            <summary>CSS/이미지가 로드되지 않아요</summary>
+            <ul class="hint">
+              <li>경로를 <code>/css/style.css</code>처럼 절대경로로 쓰면 <b>서브 경로</b>에서 깨질 수 있어요 → <code>./css/style.css</code> 권장</li>
+              <li>파일/폴더 <b>대소문자</b> 정확히 일치 (GitHub는 대소문자 구분)</li>
+            </ul>
+          </details>
+
+          <details>
+            <summary>_로 시작하는 폴더가 배포에서 빠져요</summary>
+            <p class="hint">루트에 <code>.nojekyll</code> 파일 추가</p>
+          </details>
+
+          <details>
+            <summary>캐시 때문에 업데이트가 안 보여요</summary>
+            <ul class="hint">
+              <li><span class="kbd">Ctrl/Cmd + Shift + R</span> 로 강력 새로고침</li>
+              <li>파일명에 해시 붙이기 예: <code>app.css?v=20260131</code></li>
+            </ul>
+          </details>
+
+          <details>
+            <summary>메인이 main이 아니라 master에 있어요</summary>
+            <div class="codebox">
+<pre><code># 브랜치를 main으로 통합
+git checkout master
+git branch -m master main
+git push -u origin main
+# 저장소 Settings → Pages에서 Branch: main으로 지정
+</code></pre>
+              <button class="copy" data-target="prev">복사</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Templates & Extras -->
+    <aside class="card">
+      <div class="hd">
+        <h2 class="title">스네이크 템플릿 & 추가자료</h2>
+        <p class="sub">바로 붙여 넣어 실행되는 최소 예제</p>
+      </div>
+      <div class="bd">
+        <details open>
+          <summary>스네이크 최소 예제 (index.html 1파일)</summary>
+          <div class="codebox">
+<pre><code>&lt;!doctype html&gt;
+&lt;html lang="ko"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"/&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"/&gt;
+  &lt;title&gt;Snake&lt;/title&gt;
+  &lt;style&gt;
+    html, body { height:100%; margin:0; background:#0b0f14; color:#e6eef8; }
+    .wrap { display:grid; place-items:center; height:100%; gap:12px; }
+    canvas { background:#101722; border:1px solid #1b2431; border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.35); }
+    .hint { color:#9fb0c6; font: 12px/1.5 system-ui; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="wrap"&gt;
+    &lt;canvas id="game" width="480" height="480"&gt;&lt;/canvas&gt;
+    &lt;div class="hint"&gt;← ↑ → ↓ 로 조작 / R: 리셋&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;script&gt;
+    const c = document.getElementById('game');
+    const g = c.getContext('2d');
+    const tile = 24, cols = c.width / tile, rows = c.height / tile;
+    let snake, dir, food, speed, alive;
+
+    function reset() {
+      snake = [{x: 8, y: 10}];
+      dir = {x: 1, y: 0};
+      food = spawnFood();
+      speed = 120;
+      alive = true;
+    }
+    function spawnFood() {
+      let f;
+      do {
+        f = { x: (Math.random()*cols)|0, y: (Math.random()*rows)|0 };
+      } while (snake.some(s => s.x===f.x && s.y===f.y));
+      return f;
+    }
+    function step() {
+      if (!alive) return;
+      const head = { x: (snake[0].x + dir.x + cols) % cols,
+                     y: (snake[0].y + dir.y + rows) % rows };
+      if (snake.some(s => s.x===head.x && s.y===head.y)) { alive=false; draw(); return; }
+      snake.unshift(head);
+      if (head.x===food.x && head.y===food.y) {
+        food = spawnFood(); speed = Math.max(60, speed-3);
+      } else snake.pop();
+      draw();
+      setTimeout(step, speed);
+    }
+    function draw() {
+      g.fillStyle = '#0d131c'; g.fillRect(0,0,c.width,c.height);
+      // grid
+      g.strokeStyle = '#121b27'; g.lineWidth = 1;
+      for (let i=1;i&lt;cols;i++) { g.beginPath(); g.moveTo(i*tile,0); g.lineTo(i*tile,c.height); g.stroke(); }
+      for (let j=1;j&lt;rows;j++) { g.beginPath(); g.moveTo(0,j*tile); g.lineTo(c.width,j*tile); g.stroke(); }
+      // food
+      g.fillStyle = '#ff6b6b'; g.fillRect(food.x*tile+4, food.y*tile+4, tile-8, tile-8);
+      // snake
+      snake.forEach((s,i) =&gt; {
+        g.fillStyle = i? '#5ea1ff' : '#8bd6ff';
+        g.fillRect(s.x*tile+2, s.y*tile+2, tile-4, tile-4);
+      });
+      if (!alive) {
+        g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0,0,c.width,c.height);
+        g.fillStyle = '#e6eef8'; g.font = 'bold 28px system-ui';
+        g.textAlign='center'; g.fillText('GAME OVER (R로 재시작)', c.width/2, c.height/2);
+      }
+    }
+    addEventListener('keydown', e =&gt; {
+      if (e.key==='ArrowLeft'  &amp;&amp; dir.x!==1)  dir={x:-1,y:0};
+      if (e.key==='ArrowRight' &amp;&amp; dir.x!==-1) dir={x:1,y:0};
+      if (e.key==='ArrowUp'    &amp;&amp; dir.y!==1)  dir={x:0,y:-1};
+      if (e.key==='ArrowDown'  &amp;&amp; dir.y!==-1) dir={x:0,y:1};
+      if (e.key==='r' || e.key==='R') { reset(); draw(); step(); }
+    });
+    reset(); draw(); step();
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+            <button class="copy" data-target="prev">복사</button>
+          </div>
+          <p class="hint">위 파일 하나만으로도 GitHub Pages 배포가 됩니다. (루트에 <code>index.html</code>)</p>
+        </details>
+
+        <details>
+          <summary>권장 .nojekyll (선택)</summary>
+          <div class="codebox">
+<pre><code># 파일명: .nojekyll
+# 내용 없음 (빈 파일)
+</code></pre>
+            <button class="copy" data-target="prev">복사</button>
+          </div>
+          <p class="hint">언더스코어(<code>_</code>)로 시작하는 폴더가 무시되는 것을 방지</p>
+        </details>
+
+        <details>
+          <summary>Git 명령 요약 치트시트</summary>
+          <div class="codebox">
+<pre><code># 최초 설정
+git init
+git add .
+git commit -m "init"
+
+# 원격 연결 & 푸시 (URL은 본인 것으로 변경)
+git branch -M main
+git remote add origin https://github.com/&lt;사용자명&gt;/&lt;저장소명&gt;.git
+git push -u origin main
+</code></pre>
+            <button class="copy" data-target="prev">복사</button>
+          </div>
+        </details>
+
+        <div class="sep"></div>
+        <p class="hint">Tip: 정적 사이트 생성기/빌드 없이도 HTML/CSS/JS만으로 충분히 배포됩니다.</p>
+        <div class="chips">
+          <span class="chip">#github-pages</span>
+          <span class="chip">#static-web</span>
+          <span class="chip">#snake</span>
+          <span class="chip">#education</span>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    © 2026 HTML Snake Deploy Guide · 로컬 체크리스트는 브라우저 <i>localStorage</i>에 저장됩니다.
+  </footer>
+
+  <script>
+    // --- View mode toggle ---
+    const modeSel = document.getElementById('viewMode');
+    const fast = document.querySelector('.fast');
+    const detail = document.querySelector('.detail');
+    const ts = document.querySelector('.troubleshoot');
+
+    function applyMode(m) {
+      fast.hidden = m !== 'fast';
+      detail.hidden = m !== 'detail';
+      ts.hidden = m !== 'troubleshoot';
+      localStorage.setItem('guide-view-mode', m);
+    }
+    applyMode(localStorage.getItem('guide-view-mode') || 'detail');
+    modeSel.value = localStorage.getItem('guide-view-mode') || 'detail';
+    modeSel.addEventListener('change', e => applyMode(e.target.value));
+
+    // --- Checklist persistence ---
+    const boxes = document.querySelectorAll('input[type="checkbox"][data-key]');
+    boxes.forEach(b => {
+      const key = 'guide-check-' + b.dataset.key;
+      b.checked = localStorage.getItem(key) === '1';
+      b.addEventListener('change', () => localStorage.setItem(key, b.checked ? '1' : '0'));
+    });
+    document.getElementById('resetProgress').addEventListener('click', () => {
+      boxes.forEach(b => { b.checked = false; localStorage.removeItem('guide-check-' + b.dataset.key); });
+    });
+
+    // --- Copy buttons ---
+    function textFromButton(btn) {
+      const target = btn.dataset.target;
+      if (target === 'prev') {
+        // previous sibling <pre><code>...
+        let el = btn.previousElementSibling;
+        while (el && el.tagName !== 'PRE') el = el.previousElementSibling;
+        return el ? el.innerText : '';
+      }
+      return '';
+    }
+    function attachCopyHandlers() {
+      document.querySelectorAll('.codebox .copy').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const txt = textFromButton(btn);
+          try {
+            await navigator.clipboard.writeText(txt);
+            const old = btn.textContent;
+            btn.textContent = '복사됨!';
+            btn.disabled = true;
+            setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1100);
+          } catch (e) {
+            alert('복사에 실패했습니다. 수동으로 선택하여 복사하세요.');
+          }
+        });
+      });
+    }
+    attachCopyHandlers();
+  </script>
+</body>
+</html>
